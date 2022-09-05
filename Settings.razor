@@ -1,0 +1,264 @@
+@page "/Settings"
+<PageTitle>- Settings </PageTitle>
+
+@inject IPortfolioRepository portfolioRepository
+@attribute [Authorize]
+
+<style>
+    .k-checkbox:checked {
+        border-color: var(--primary-clr);
+        color: #fff;
+        background-color: var(--primary-clr);
+    }
+
+    .k-checkbox:hover {
+        border-color: var(--primary-clr);
+        color: white;
+        background-color: var(--primary-clr);
+    }
+
+    .k-checkbox:focus {
+        border-color: black;
+    }
+
+    .txtCommission {
+        margin-left: 12px !important;
+    }
+
+    .btnSave {
+        background-color: var(--primary-clr) !important;
+        font-weight: bold;
+        padding-left: 12px;
+        padding-right: 12px;
+        color: white;
+        border-color: grey;
+        margin-right: 8px;
+    }
+
+    .k-button {
+        background-image: none !important;
+    }
+
+    .btnCancel {
+        background-color: #f6f6f6;
+        font-weight: bold;
+        padding-left: 12px;
+        padding-right: 12px;
+        color: black;
+        border-color: grey;
+        margin-right: 8px;
+    }
+
+</style>
+
+<UserLayout />
+<div class="row">
+    <div class="col-12 text-center mt-3">
+        <h1 style="color: var(--primary-clr); font-weight:bold;">Settings</h1>
+    </div>
+</div>
+<div class="row">
+    <TelerikRootComponent>
+        <div class="col-12 offset-3 p-3">
+            <label class="" style="font-size:85%; font-weight:bold; color:grey">Portfolio Currency</label>
+            <TelerikDropDownList Data="@currencyList" TextField="Abbreviation" ValueField="CurrencyId" Id="CurrencyDropDown"
+                                 TItem="CurrencySourceVM" TValue="int" @bind-Value="SelectedCurrency"
+                                 Width="5%" PopupWidth="5%" PopupHeight="auto" Class="dropdown-list-selection interval ddl-no-bg">
+                <ValueTemplate Context="vt">
+                    <span class="service-category">@( (vt as CurrencySourceVM).Abbreviation)</span>
+                </ValueTemplate>
+            </TelerikDropDownList>
+        </div>
+    </TelerikRootComponent>
+</div>
+<div class="row justify-content-center ">
+    <TelerikRootComponent>
+        <div class="col-sm-8 col-lg-6 border border-dark p-4">
+            @*<div class="d-flex justify-content-center mt-4 mb-5">
+                    <h4 style="color: var(--primary-clr); font-weight:bold;">Settings</h4>
+                </div>*@
+            <div class="row">
+                <div class="col-sm-4 col-12 ">
+                    <TelerikCheckBox Id="CanadaCheckBox" Value="@isCadSelected" ValueChanged="@((bool value) => CanadaCheckBoxChangeHandler(value))" Class="border border-dark" />
+                    <label for="CanadaCheckBox" class="" style="font-size:85%; font-weight:bold; color:grey">Canadian Currency Account</label>
+                </div>
+                <div class="col-sm-4 col-12 mt-sm-0 mt-3">
+                    <label style="font-weight: bold; color: grey">$</label>
+                    <TelerikNumericTextBox @bind-Value="@userSettings.CADBalance" Id="txtAmount" Arrows="false" Class="form-control w-75" Enabled="@IsCadBalanceEnable"></TelerikNumericTextBox>
+                </div>
+                <div class="col-sm-4 col-12 mt-sm-0 mt-3">
+                    <TelerikDatePicker Format="MMMM dd, yyyy" Class="form-control w-75" @bind-Value="@userSettings.CADDate" Id="validate-date" Enabled="@IsCadDateEnable"/>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-sm-4 col-12 ">
+                    <TelerikCheckBox Id="USCheckBox" Value="@isUSSelected" ValueChanged="@((bool value) => USCheckBoxChangeHandler(value))" Class="border border-dark " />
+                    <label for="USCheckBox" class="" style="font-size:85%; font-weight:bold; color:grey">US Currency Account</label>
+                </div>
+                <div class="col-sm-4 col-12 mt-sm-0 mt-3">
+                    <label style="font-weight: bold; color: grey">$</label>
+                    <TelerikNumericTextBox @bind-Value="@userSettings.USBalance" Id="txtAmount" Arrows="false" Class="form-control w-75" Enabled="@IsUSBalanceEnable"></TelerikNumericTextBox>
+                </div>
+                <div class="col-sm-4 col-12 mt-sm-0 mt-3">
+                    <TelerikDatePicker Format="MMMM dd, yyyy" @bind-Value="@userSettings.USDate" Id="validate-date" Class="form-control w-75" Enabled="@IsUSDateEnable"/>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-sm-4 col-12 mt-1">
+                    <TelerikDropDownList Data="@Filters" TextField="Value" ValueField="Id" Id="commission"
+                                         TItem="CommissionDropDownDataItem" TValue="int" @bind-Value="SelectedValue" OnChange="() => SelectedCommission(SelectedValue)"
+                                         PopupHeight="auto" Class="dropdown-list-selection interval ddl-no-bg" Width="62%">
+                        <ValueTemplate Context="vt">
+                            <span class="service-category">@( (vt as CommissionDropDownDataItem).Value)</span>
+                        </ValueTemplate>
+                    </TelerikDropDownList>
+                    @*<TelerikDropDownList Value="@CommissionData.Id"
+                                         Data="@Filters" TextField="Value" ValueField="Id" Id="commission"
+                                         TItem="CommissionDropDownDataItem" TValue="int"
+                                         PopupHeight="auto" Width="62%" 
+                                         ValueChanged="@( (int c) => SelectedCommission(c) )">
+                        <ValueTemplate Context="vt">
+                            <span class="service-category">@( (vt as CommissionDropDownDataItem).Value)</span>
+                        </ValueTemplate>
+                    </TelerikDropDownList>*@
+                </div>
+                <div class="col-sm-4 col-12 mt-sm-0 mt-2">
+                    <TelerikNumericTextBox @bind-Value="@userSettings.Commission" Id="txtAmount" Arrows="false" Class="txtCommission form-control w-75" Enabled="@IsCommissionEnable"></TelerikNumericTextBox>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12 text-right">
+                    <TelerikButton Class="btnSave btn">Save</TelerikButton>
+                    <TelerikButton Class="btnCancel btn" OnClick="@Cancel">Cancel</TelerikButton>
+                </div>
+            </div>
+        </div>
+    </TelerikRootComponent>
+</div>
+
+
+
+@code {
+
+    public bool isCadSelected { get; set; }
+
+    public bool IsCadBalanceEnable { get; set; } = false;
+
+    public bool IsCadDateEnable { get; set; } = false;
+
+    public bool IsUSBalanceEnable { get; set; } = false;
+
+    public bool IsUSDateEnable { get; set; } = false;
+
+    public bool IsCommissionEnable { get; set; } = false;
+
+    public  bool isUSSelected { get; set; }
+
+    public int SelectedValue { get; set; } = 1;
+    public int SelectedCurrency { get; set; }
+    public string selectedCommission { get; set; }
+
+    public List<string> CommissionDropdownData { get; set; }
+    public CommissionDropDownDataItem CommissionData { get; set; }
+
+
+    UserSettings userSettings { get; set; }
+
+    public class CommissionDropDownDataItem
+    {
+        public int Id { get; set; }
+        public string Value { get; set; }
+    }
+
+    public List<CommissionDropDownDataItem> Filters { get; set; } = new List<CommissionDropDownDataItem>
+    { new CommissionDropDownDataItem { Value = "None", Id = 1 },
+        new CommissionDropDownDataItem { Value = "Per Share", Id = 2 },
+    new CommissionDropDownDataItem { Value = "Per Trade", Id = 3 },
+    new CommissionDropDownDataItem { Value = "Percent", Id = 4 },
+    };
+
+
+    void USCheckBoxChangeHandler(bool value)
+    {
+        if (value)
+        {
+            isUSSelected = true;
+            IsUSBalanceEnable = true;
+            IsUSDateEnable = true;
+        }
+        else
+        {
+            isUSSelected = false;
+            IsUSBalanceEnable = false;
+            IsUSDateEnable = false;
+        }
+    }
+
+    void SelectedCommission(int commission)
+    {
+        if(commission == 1)
+        {
+            IsCommissionEnable = false;
+        }
+        else
+        {
+            IsCommissionEnable = true;
+        }
+    }
+
+    void CanadaCheckBoxChangeHandler(bool value)
+    {
+        if (value)
+        {
+            isCadSelected = true;
+            IsCadBalanceEnable = true;
+            IsCadDateEnable = true;
+        }
+        else
+        {
+            isCadSelected = false;
+            IsCadBalanceEnable = false;
+            IsCadDateEnable = false;
+        }
+    }
+
+    public void Cancel()
+    {
+        isCadSelected = false;
+        IsCadBalanceEnable = false;
+        IsCadDateEnable = false;
+        isUSSelected = false;
+        IsUSBalanceEnable = false;
+        IsUSDateEnable = false;
+        SelectedCurrency = 1;
+        SelectedValue = 1;
+    }
+
+
+
+
+    public List<CurrencySourceVM> currencyList { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        userSettings = new UserSettings();
+        userSettings.CADDate = DateTime.Now;
+        userSettings.USDate = DateTime.Now;
+        CommissionData = new CommissionDropDownDataItem();
+
+        //currencyLst = new List<Currency>();
+
+        //    CommissionDropdownData = new List<string>()
+        //{
+        //                            "None",
+        //                            "Per Trade",
+        //                            "Per share",
+        //                            "Percent"
+        //};
+
+        currencyList = await portfolioRepository.GetAllCurrency();
+        SelectedCurrency = 1;
+        selectedCommission = "None";
+    }
+}

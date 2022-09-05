@@ -1,0 +1,131 @@
+@page "/MyIndustriesGainer/{parameter}"
+<PageTitle> My Gainer Industries  </PageTitle>
+
+@inject IMyIndustriesRepository MyIndustriesRepository
+
+ 
+<div class="position-relative">
+    <div class="d-flex flex-wrap bg-white" style="height:auto;width:100%">
+        @if (isLoadingData)
+            {
+                @* sample loading panel, styles are at the end *@
+                <div class="loading-panel-wrapper">
+                    <div class="loading-panel-overlay"></div>
+                    <TelerikLoader Size="@LoaderSize.Medium" Type="@LoaderType.ConvergingSpinner" ThemeColor="@ThemeColors.Primary" />
+                </div>
+            }
+
+            <div class="container-fluid">
+                <div class="row" id="IndustriesTrend">
+                    <div class="col-md-12 " style="padding: 0px; ">
+                        <TelerikGrid Data="@MyData" Height="24vh" Class="check home-grid"  Pageable="true" Resizable="true" PageSize="10">
+                            <GridSettings>
+                                <GridPagerSettings ButtonCount="2" />
+                            </GridSettings>
+                            <GridColumns>
+                                <GridColumn Field="StockName" Title="" Width="77%" OnCellRender="@OnCellRenderHandlers">
+                                    <Template>
+                                        @{
+                                        var data = context as MyIndustries;
+                                        var IndustriesName = data.IndustryName;
+                                        var ReplaceWord = IndustriesName.Replace("(Industry)", "");
+                                        <div>
+                                            @ReplaceWord
+                                        </div>
+
+                                    }
+
+                                </Template>
+                            </GridColumn>
+
+                            <GridColumn Field="StockTrend" Title="" OnCellRender="@OnCellRenderHandler" Width="23%">
+                                <Template>
+                                    @{
+                                        var data = context as MyIndustries;
+                                        decimal Trendes = 0;
+                                        if (data.TenDaySma != null || data.TenDayReturn != null || data.OneYearReturn != null || data.TwentyOneDayReturn != null)
+                                        {
+                                            if (parameter == "SMA10DayGrowthRate")
+                                            {
+                                                Trendes = Convert.ToDecimal(data.TenDaySma);
+
+                                            }
+                                            else if (parameter == "TenDayReturn")
+                                            {
+                                                Trendes = Convert.ToDecimal(data.TenDayReturn);
+                                            }
+                                            else if (parameter == "TwentyOneDayReturn")
+                                            {
+                                                Trendes = Convert.ToDecimal(data.TwentyOneDayReturn);
+                                            }
+                                            else if (parameter == "OneYearReturn")
+                                            {
+                                                Trendes = Convert.ToDecimal(data.OneYearReturn);
+                                            }
+                                            var Setddecimal = Math.Round(Trendes, 1);
+                                            var Change = string.Empty;
+                                            if (Trendes > 0)
+                                            {
+                                                Change = "" + Setddecimal;
+                                            }
+                                            else
+                                            {
+                                                Change = Setddecimal.ToString();
+                                            }
+                                            <div>
+                                                @Change %
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div></div>
+                                        }
+                                    }
+                                </Template>
+                            </GridColumn>
+
+                        </GridColumns>
+                    </TelerikGrid>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+@code {
+    [Parameter]
+    public string parameter { get; set; } = string.Empty;
+    //List<StockTrends> data = new List<StockTrends>();
+    public List<MyIndustries> MyData { get; set; }
+    public bool isLoadingData { get; set; }
+    void OnCellRenderHandler(GridCellRenderEventArgs args)
+    {
+        var CellValue = args.Item as MyIndustries;
+        if (Convert.ToDecimal(CellValue.TenDaySma) < 0 || Convert.ToDecimal(CellValue.TenDayReturn) < 0 || Convert.ToDecimal(CellValue.OneYearReturn) < 0 || Convert.ToDecimal(CellValue.TwentyOneDayReturn) < 0) 
+        {
+            args.Class = "negativeValuesRowFormatting";
+        }
+        else if (Convert.ToDecimal(CellValue.TenDaySma) > 0 || Convert.ToDecimal(CellValue.TenDayReturn) > 0 || Convert.ToDecimal(CellValue.OneYearReturn) > 0 || Convert.ToDecimal(CellValue.TwentyOneDayReturn) > 0)
+        {
+            args.Class = "positiveValuesRowFormatting";
+        }
+    }
+
+    void OnCellRenderHandlers(GridCellRenderEventArgs args)
+    {
+        args.Class = "myCustomCellFormatting";
+
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoadingData = true;
+        var data = await MyIndustriesRepository.GetMyIndustriesRepositoryData();
+        MyData = data;
+        isLoadingData = false;
+        StateHasChanged();
+    }
+
+
+}

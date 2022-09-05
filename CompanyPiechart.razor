@@ -1,0 +1,223 @@
+@page "/CompanyPiechart/{Id:int}"
+<PageTitle> Company Pie chart </PageTitle>
+
+@attribute [Authorize]
+
+@inject IJSRuntime JSRuntime
+@inject IPortfolioListingRepository portfolioListingRepository
+@inject IFeaturesManager _featureManager
+@inject IFeatureManagementRepository _FeatureManagementRepo
+@using System.Globalization;
+
+<style>
+
+
+
+</style>
+
+@if (isLoadingData)
+{
+    @* sample loading panel, styles are at the end *@
+    <div class="loading-panel-wrapper">
+        <div class="loading-panel-overlay"></div>
+        <TelerikLoader Size="@LoaderSize.Medium" Type="@LoaderType.ConvergingSpinner" ThemeColor="@ThemeColors.Primary" />
+    </div>
+}
+<div class="col-12 d-flex flex-wrap overflow-hidden">
+    <div class="col-xl-7">
+        @if (_allowCompanyPieChart)
+        {
+            <div id="CompanyPieChart" style="height:400px">
+            </div>
+        }
+    </div>
+
+    <div class="mt-4 w-sm-100 w-md-auto overflow-auto">
+        @if (_allowCompanyGrid)
+        {
+            @if (pieChartModel != null && pieChartModel.Any(x => !x.IsDataAvailable))
+            {
+                <p class="txtImportant fnt-11"> indicates that quote data was not available for the noted listing</p>
+            }
+
+
+            <TelerikGrid @ref="@Grid" Data=@pieChartModel Class="mb-4 no-scroll" Pageable="false">
+                <GridColumns>
+                    <GridColumn Field="SegmentColor" Title="">
+                        <Template>
+                            @{
+                            var listing = context as PieChartModel;
+                            <div class="text-center">
+                                <div style="background-color: @listing.Color; width: 12px; height:12px;"></div>
+                            </div>
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="Symbol" Title="Symbol">
+                    <Template>
+                        @{
+                            var listing = context as PieChartModel;
+                            var name = listing.Name;
+                            @if (!listing.IsDataAvailable)
+                            {
+                                <p class="txtImportant">@name</p>
+                            }
+                            else
+                            {
+                                <p>@name</p>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+
+
+                <GridColumn Field="Value" Title="Market Value">
+                    <HeaderTemplate>
+                        <div class="text-right">
+                            Value
+                        </div>
+                    </HeaderTemplate>
+                    <Template>
+                        @{
+                            var usCulture = CultureInfo.CreateSpecificCulture("en-US");
+                            var clonedNumbers = (NumberFormatInfo)usCulture.NumberFormat.Clone();
+                            var piechart = context as PieChartModel;
+                            <div class="text-right">
+                                @(String.Format(clonedNumbers, "{0:C2}", @piechart.Value))
+                            </div>
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="Weighting" Title="Allocation">
+                    <HeaderTemplate>
+                        <div class="text-right">Weighting</div>
+                    </HeaderTemplate>
+                    <Template>
+                        @{
+
+                            var piechart = context as PieChartModel;
+                            <div class="text-right"> @piechart.Weighting<span>%</span></div>
+
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </TelerikGrid>
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public int PortfolioId { get; set; }
+    [Parameter]
+    public bool IsPortfolio { get; set; }
+
+    MarkupString logger;
+    public List<PieChartModel> pieChartModel { get; set; }
+
+    public bool isLoadingData { get; set; }
+    // public string MySeriesTemplate = "#=dataItem.symbol#\n $#=dataItem.invested#\n#=dataItem.Weighting#%";
+    public string MySeriesTemplate = "#=dataItem.Symbol#";
+    public bool _allowCompanyPieChart { get; set; } = false;
+    public bool _allowCompanyGrid { get; set; } = false;
+
+    public TelerikGrid<PieChartModel> Grid { get; set; }
+
+    //--------Premuim Trail Version Object
+    public PremiumTrialVersion demoFeatureonPiaChartTab = new();
+
+    void AppendToLog(string message)
+    {
+        string htmlMessage = $"<br />Exception Ocurred: {message}";
+        logger = new MarkupString(logger + htmlMessage);
+    }
+
+
+    public void AutoFitAllColumns()
+    {
+        Grid.AutoFitAllColumns();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //Get feature Data
+        await GetFeaturesData();
+        pieChartModel = new List<PieChartModel>();
+    }
+    /// <summary>
+    /// Get Features Data and set into the session storage
+    /// </summary>
+    public async Task GetFeaturesData()
+    {
+        var category = IsPortfolio ? FeatureConstants.PortfolioDiversification.CategoryName : FeatureConstants.ModelDiversification.CategoryName;
+        //Get Feature Value According to Category
+        List<CategoryFeatureModel> CategoryFeatures = await _featureManager.GetCategoryFeatures(category);
+        //Set Enable or disable feature
+        if (CategoryFeatures != null && CategoryFeatures.Count > 0)
+        {
+            var companyPieChart = IsPortfolio ? FeatureConstants.PortfolioDiversification.PortfolioCompanyPieChart : FeatureConstants.ModelDiversification.ModelCompanyPieChart;
+            var companyGrid = IsPortfolio ? FeatureConstants.PortfolioDiversification.PortfolioCompanyGrid : FeatureConstants.ModelDiversification.ModelCompanyGrid;
+
+            //-------------------***** APPLY PREMIUM TRIAL FEATURES CODE START HERE ****&---------------
+            demoFeatureonPiaChartTab = await _FeatureManagementRepo.GetDemonstrationfeature(category, IsPortfolio);
+            if (!string.IsNullOrEmpty(demoFeatureonPiaChartTab.TrialdaysMessage))
+            {
+                var featurelist = demoFeatureonPiaChartTab.PremiumFeatureName.ToList();
+                if (featurelist?.Count() > 0)
+                {
+                    foreach (var item in featurelist)
+                    {
+                        if (item == companyPieChart)
+                        {
+                            _allowCompanyPieChart = true;
+                        }
+                        else if (item == companyGrid)
+                        {
+                            _allowCompanyGrid = true;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                _allowCompanyPieChart = await _featureManager.GetFeatureStatus(companyPieChart, CategoryFeatures);
+                _allowCompanyGrid = await _featureManager.GetFeatureStatus(companyGrid, CategoryFeatures);
+            }
+            //-------------------***** APPLY PREMIUM TRIAL FEATURES CODE END HERE ****&---------------
+        }
+    }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            isLoadingData = true;
+            pieChartModel = await portfolioListingRepository.GetDiversificationPortfolioListings(PortfolioId);
+            StateHasChanged();
+            if (_allowCompanyPieChart)
+            {
+                await JSRuntime.InvokeVoidAsync(
+                      "chartingFunctions.showCompanyPieChart",
+                      new object[] {
+                    "CompanyPieChart",
+                    //Math.Round((decimal)PortfolioDetailDto.DownsideVolatility* 100,2) ,
+                    pieChartModel
+                                                      });
+            }
+            isLoadingData = false;
+            @if (_allowCompanyGrid && Grid.TotalCount > 0)
+            {
+                AutoFitAllColumns();
+            }
+        }
+        catch (Exception ex)
+        {
+
+        }
+
+
+    }
+}

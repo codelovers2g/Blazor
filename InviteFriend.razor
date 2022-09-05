@@ -1,0 +1,315 @@
+@layout MainLayout
+@page "/FriendInvites"
+<PageTitle> - Invite Friend </PageTitle>
+
+@using System.Globalization;
+
+@using Telerik.Blazor.Components;
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize]
+@inject IAnalytics analytics
+@inject NavigationManager NavigationManager
+@inject IPortfolioRepository portfolioRepository
+@inject IJSRuntime JSRuntime
+@inject IFeaturesManager _featureManager
+@*@inject IIndustriesRepository IndustriesRepository*@
+<style>
+    .warning {
+        width: fit-content !important;
+    }
+</style>
+<div class="dashboard-box">
+    <div class="MainBox">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col">
+                    <h3 class="font-weight-bold">Invite a friend & receive 50% off!</h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="fnt-s3">
+                       ABC
+                    </div>
+                </div>
+            </div>
+            <div class="py-3 ml-md-4 mb-3">
+                <EditForm Model="@sendRequestToFriend" OnValidSubmit="@sendRequest" class="col-lg-6">
+                    <DataAnnotationsValidator />
+
+
+                    <div class="row mb-3">
+                        <div class="col-lg-4 d-flex align-items-center">
+                            <label class="m-lg-0 fnt-s2">First Name</label>
+                        </div>
+                        <div class="col-xl-6 col-lg-8">
+                            <TelerikTextBox Class="border-dark" @bind-Value="@sendRequestToFriend.FriendName" Width="100%"></TelerikTextBox>
+                            <ValidationMessage For="@(() => @sendRequestToFriend.FriendName)"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-lg-4 d-flex align-items-center">
+                            <label class="m-lg-0 fnt-s2">Email</label>
+                        </div>
+                        <div class="col-xl-6 col-lg-8">
+                            <TelerikTextBox Class="border-dark" @bind-Value="@sendRequestToFriend.Email" Width="100%"></TelerikTextBox>
+                            <ValidationMessage For="@(() => @sendRequestToFriend.Email)"></ValidationMessage>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col">
+                            <TelerikButton ButtonType="@ButtonType.Submit">Send Invite</TelerikButton>
+                        </div>
+                    </div>
+
+                </EditForm>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <div class="fnt-s3">
+                       XYZ
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col">
+                    <h4 class="font-weight-bold">Invites Sent</h4>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    @if (isLoadingData)
+                    {
+                        @* sample loading panel, styles are at the end *@
+                        <div class="loading-panel-wrapper">
+                            <div class="loading-panel-overlay"></div>
+                            <TelerikLoader Size="@LoaderSize.Medium" Type="@LoaderType.ConvergingSpinner" ThemeColor="@ThemeColors.Primary" />
+                        </div>
+                    }
+                    <TelerikGrid Data="@freindinvitedList" Height="40vh" Width="100%"
+                                 Pageable="true" Sortable="true" Groupable="false"
+                                 Resizable="true" Reorderable="true" Class="ivitetable">
+                        <GridColumns>
+                            <GridColumn Field="@(nameof(FriendInviteModel.InviteDate))" Title="Invite Date">
+                                <Template>
+                                    @{
+                                        var data = context as FriendInviteModel;
+                                        var d = Convert.ToDateTime(data.InviteDate);
+                                        string date = string.Format($"{d.Day}-{d.Month}-{d.Year}");
+                                        <span>@date</span>
+                                    }
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Field="@(nameof(FriendInviteModel.FriendName))" Title="First Name" />
+                            <GridColumn Field="@(nameof(FriendInviteModel.Email))" Title="Email" />
+                            <GridColumn Field="@(nameof(FriendInviteModel.SuccessfullInvite))" Title="Successful Invite" Editable="false">
+                                <Template>
+                                    @{
+                                        var data = context as FriendInviteModel;
+                                        if (Convert.ToBoolean(data.SuccessfullInvite))
+                                        {
+                                            <span style="color: darkgreen; font-weight:bolder;">Yes</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: darkgoldenrod; font-weight: bolder;">No</span>
+                                        }
+
+                                    }
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Field="@(nameof(FriendInviteModel.FriendRegistrationDate))" Title="Registration Date">
+                                <Template>
+                                    @{
+                                        var data = context as FriendInviteModel;
+                                        var d = Convert.ToDateTime(data.FriendRegistrationDate);
+
+                                        string date = string.Format($"{d.Year}-{d.Month}-{d.Day}");
+                                        if (date != "1-1-1")
+                                        {
+                                            <span>@date</span>
+                                        }
+                                        else
+                                        {
+                                            <span></span>
+                                        }
+                                    }
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Field="@(nameof(FriendInviteModel.DiscountDate))" Title="Discount Date">
+                                <Template>
+                                    @{
+                                        var data = context as FriendInviteModel;
+                                        var d = Convert.ToDateTime(data.DiscountDate);
+
+                                        string date = string.Format($"{d.Year}-{d.Month}-{d.Day}");
+                                        if (date != "1-1-1")
+                                        {
+                                            <span>@date</span>
+                                        }
+                                        else
+                                        {
+                                            <span></span>
+                                        }
+                                    }
+                                </Template>
+                            </GridColumn>
+                        </GridColumns>
+                    </TelerikGrid>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<TelerikWindow @bind-Visible="@confirmRequestSend" Modal="true" Class="small-box">
+    <WindowTitle>
+        <strong>Success</strong>
+    </WindowTitle>
+    <WindowActions>
+        <WindowAction Name="Close" />
+    </WindowActions>
+    <WindowContent>
+        <h6 class="text-center">Invitation sent to @sendRequestToFriend.FriendName.</h6>
+        <div class="mt-3 text-center">
+            <TelerikButton OnClick="@OK" Class="btnNo">Ok</TelerikButton>
+        </div>
+    </WindowContent>
+</TelerikWindow>
+
+<TelerikWindow @bind-Visible="@WarningRequestModal" Modal="true" Class="warning">
+    <WindowTitle>
+        <strong>Warning</strong>
+    </WindowTitle>
+    <WindowActions>
+        <WindowAction Name="Close" />
+    </WindowActions>
+    <WindowContent>
+        <h6 style="margin-bottom:0px;" class="text-center">@ErrorMessage</h6>
+        <div class="text-center btnOk mt-3">
+            <TelerikButton OnClick="@OK" Primary="true">Ok</TelerikButton>
+        </div>
+    </WindowContent>
+</TelerikWindow>
+
+<TelerikWindow @bind-Visible="@confirmPopup" Modal="true" Class="small-box">
+    <WindowTitle>
+        <strong>Confirmation</strong>
+    </WindowTitle>
+    <WindowActions>
+        <WindowAction Name="Close" />
+    </WindowActions>
+    <WindowContent>
+        <div>
+            @{
+                var message = ConfirmationMessage.Split('^');
+            }
+            <h6 style="margin-bottom:0px;" class="text-center">@message[0]</h6>
+            <h6 style="margin-bottom:0px;" class="text-center">@message[1]</h6>
+        </div>
+        <div class="text-center btnOk mt-3">
+            <TelerikButton OnClick="@ReinviteFriend" Primary="true">Yes</TelerikButton>
+            <TelerikButton OnClick="()=> {confirmPopup = false;}">No</TelerikButton>
+        </div>
+    </WindowContent>
+</TelerikWindow>
+
+
+@code {
+    public bool isLoadingData { get; set; }
+    public bool? FirtsTimeLogin { get; set; }
+    public bool Visible { get; set; } = false;
+    public List<FriendInviteModel> freindinvitedList { get; set; }
+    [CascadingParameter] private Task<AuthenticationState> AuthenticationState { get; set; }
+    public bool WarningRequestModal { get; set; } = false;
+    public bool confirmRequestSend { get; set; } = false;
+    public bool confirmPopup { get; set; } = false;
+
+    public string ErrorMessage { get; set; }
+    public string ConfirmationMessage { get; set; }
+
+    public FriendInviteModel sendRequestToFriend = new();
+
+    public async Task sendRequest()
+    {
+        isLoadingData = true;
+
+        var inviteeResponse = await portfolioRepository.SaveFriendInvitation(sendRequestToFriend);
+        if (inviteeResponse.IsSuccess)
+        {
+            confirmRequestSend = true;
+            freindinvitedList = await portfolioRepository.GetInvitedFreindListByUserId();
+            isLoadingData = false;
+        }
+        else if (inviteeResponse.IsSuccess == false && inviteeResponse.IsFree)
+        {
+            isLoadingData = false;
+            ConfirmationMessage = inviteeResponse.Message;
+            confirmPopup = true;
+        }
+        else
+        {
+            ErrorMessage = inviteeResponse.Message;
+            WarningRequestModal = true;
+            isLoadingData = false;
+        }
+        StateHasChanged();
+    }
+
+    public async Task ReinviteFriend()
+    {
+        isLoadingData = true;
+        sendRequestToFriend.IsInvited = true;
+        confirmPopup = false;
+        var inviteeResponse = await portfolioRepository.SaveFriendInvitation(sendRequestToFriend);
+        if (inviteeResponse.IsSuccess)
+        {
+            confirmRequestSend = true;
+            freindinvitedList = await portfolioRepository.GetInvitedFreindListByUserId();
+            sendRequestToFriend.IsInvited = false;
+        }
+        else
+        {
+
+            ErrorMessage = inviteeResponse.Message;
+            WarningRequestModal = true;
+            sendRequestToFriend.IsInvited = false;
+        }
+        isLoadingData = false;
+        StateHasChanged();
+    }
+
+    public async Task OK()
+    {
+        sendRequestToFriend.FriendName = null;
+        sendRequestToFriend.Email = null;
+        WarningRequestModal = false;
+        confirmRequestSend = false;
+        StateHasChanged();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+
+        @*isLoadingData = true;
+            var authState = await AuthenticationState;
+            var user = authState.User;
+
+            if (user.Identity.IsAuthenticated)
+            {
+            freindinvitedList = await portfolioRepository.GetInvitedFreindListByUserId();
+
+            }
+            else
+            {
+            NavigationManager.NavigateTo($"authentication/login");
+            }
+            isLoadingData = false;*@
+        isLoadingData = true;
+        freindinvitedList = await portfolioRepository.GetInvitedFreindListByUserId();
+        isLoadingData = false;
+
+
+    }
+}
+
