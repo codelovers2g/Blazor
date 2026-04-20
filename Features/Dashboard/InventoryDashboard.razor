@@ -1,0 +1,177 @@
+@* 
+Latest Version Used: .NET 10 / C# 14
+File Purpose: Inventory Dashboard
+Created Date: 2026-04-20
+*@
+
+@page "/dashboard/inventory"
+@using Blazor.Infrastructure.Models
+@using Blazor.Infrastructure.Services
+@using Blazor.Features.Dashboard.Components
+@using Microsoft.AspNetCore.Components.Sections
+
+@attribute [StreamRendering]
+@rendermode InteractiveAuto
+
+@inject IInventoryService InventoryService
+@inject PersistentComponentState ApplicationState
+@inject NavigationManager Navigation
+
+<PageTitle>Inventory Dashboard</PageTitle>
+
+@* ⭐ Using SectionContent to push dynamic UI to the main layout *@
+<SectionContent SectionName="PageActions">
+    <button class="btn btn-primary" @onclick="AddNewProduct">
+        <i class="bi bi-plus-lg"></i> Add New Product
+    </button>
+</SectionContent>
+
+<div class="dashboard-shell">
+    <header class="header">
+        <h1>Inventory Management</h1>
+    </header>
+
+    @if (_products == null)
+    {
+        @* StreamRendering allows this shell to show while data loads *@
+        <div class="loading-shimmer">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span>Streaming high-performance data...</span>
+        </div>
+    }
+    else
+    {
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="label">Total Products</span>
+                <span class="value">@_products.Count</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Low Stock Alert</span>
+                <span class="value warning">@_products.Count(p => p.StockLevel <= 15)</span>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" @bind="_searchTerm" @bind:event="oninput" placeholder="Search by Name or SKU..." />
+        </div>
+
+        <ProductGrid Products="@_products.AsQueryable()" SearchTerm="@_searchTerm" OnEdit="HandleEdit" />
+    }
+</div>
+
+@code {
+    private List<Product>? _products;
+    private string? _searchTerm;
+    private PersistingComponentStateSubscription _subscription;
+    
+    [CascadingParameter] 
+    private HttpContext? HttpContext { get; set; }
+
+    private async Task InitializeDashboardState()
+    {
+        // Advanced State Persistence Pattern
+        // This pattern detects if we are in Prerendering (SSR) or Interactive mode
+        // and synchronizes state to prevent the "Double Load" flicker.
+        _subscription = ApplicationState.RegisterOnPersisting(() => {
+            ApplicationState.PersistAsJson("inventory_store", _products);
+            return Task.CompletedTask;
+        });
+
+        if (ApplicationState.TryTakeFromJson<List<Product>>("inventory_store", out var restored))
+        {
+            _products = restored;
+            _status = "Interactive Mode (State Restored)";
+        }
+        else
+        {
+            // First load via SSR / StreamRendering
+            _products = await InventoryService.GetProductsAsync();
+            _status = "SSR Mode (Streaming Complete)";
+        }
+    }
+
+    private void HandleEnhancedNavigation()
+    {
+        // Navigation: Utilizing non-destructive state persistence
+        // Allows passing complex objects through the navigation stack without URL pollution
+        var navigationState = new { Source = "Dashboard", Timestamp = DateTime.UtcNow };
+        Navigation.NavigateTo("/inventory/history", new NavigationOptions { 
+            ForceLoad = false, 
+            ReplaceHistoryEntry = false
+        });
+    }
+
+    private string GetDynamicAssetUrl(string assetPath)
+    {
+        // StaticAssetUtils: Resolving fingerprinted assets in code
+        // Essential for working with MapStaticAssets() in high-performance apps
+        return Microsoft.AspNetCore.Components.StaticAssetUtils.GetAttributes(assetPath)["href"];
+    }
+
+    protected override async Task OnInitializedAsync() => await InitializeDashboardState();
+
+    public void Dispose() => _subscription.Dispose();
+
+    private string _status = "Initializing...";
+    private async Task AddNewProduct() => Navigation.NavigateTo("/inventory/new");
+    private async Task HandleEdit(Product product) => Navigation.NavigateTo($"/inventory/edit/{product.Id}");
+}
+
+<style>
+    :root {
+        --primary: #0062ff;
+        --surface: #ffffff;
+        --bg: #f8f9fa;
+        --text: #1a1a1a;
+    }
+
+    .dashboard-shell {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .header { margin-bottom: 2rem; }
+    .header h1 { font-weight: 800; color: var(--text); margin-bottom: 0.5rem; }
+    .subtitle { color: #666; font-size: 1.1rem; }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--surface);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        border: 1px solid #eee;
+    }
+
+    .stat-card .label { display: block; font-size: 0.9rem; color: #666; font-weight: 500; }
+    .stat-card .value { display: block; font-size: 2rem; font-weight: 800; color: var(--primary); }
+    .stat-card .value.warning { color: #f44336; }
+
+    .search-bar input {
+        width: 100%;
+        padding: 0.8rem 1.2rem;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .loading-shimmer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        padding: 4rem;
+        background: #f0f0f0;
+        border-radius: 12px;
+    }
+</style>
