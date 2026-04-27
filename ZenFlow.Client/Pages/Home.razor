@@ -1,0 +1,90 @@
+@page "/"
+@* Using InteractiveAuto render mode to achieve immediate SEO/Server rendering while subsequently downloading Wasm for zero-latency client interactions. *@
+@rendermode InteractiveAuto
+@implements IDisposable
+
+<PageTitle>ZenFlow</PageTitle>
+
+<div class="dashboard-container">
+    <div class="welcome-section animate-fade-in">
+        <h1>Welcome back, <span class="gradient-text">Zen User</span></h1>
+        <p>Stay organized and focused. You have @ActiveTasks.Count() tasks remaining today.</p>
+    </div>
+
+
+
+    <div class="dashboard-layout">
+        <!-- Main Task Card -->
+        <div class="dashboard-card glass main-task-card">
+            <div class="card-header">
+                <div class="header-left">
+                    <h2>Daily Tasks</h2>
+                    <span class="badge">@ActiveTasks.Count() Active</span>
+                </div>
+                <div class="search-box glass">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search tasks..." 
+                           @bind="searchTerm" @bind:event="oninput" />
+                </div>
+                <button class="icon-btn-text" @onclick="ToggleCompleted" title="Toggle Completed View">
+                    @if (showCompleted)
+                    {
+                        <span><i class="bi bi-eye-slash"></i> Hide Completed</span>
+                    }
+                    else
+                    {
+                        <span><i class="bi bi-eye"></i> Show Completed (@CompletedTasks.Count())</span>
+                    }
+                </button>
+            </div>
+
+            <div class="tasks-scroll-area">
+                <div class="add-task-inline glass-panel">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <input type="text" placeholder="What needs to be done?"
+                           @bind="newTaskTitle" @bind:event="oninput"
+                           @onkeyup="HandleKeyUp" />
+                    @if (!string.IsNullOrWhiteSpace(newTaskTitle))
+                    {
+                        <button class="add-btn animate-fade-in" @onclick="AddTask">
+                            Add
+                        </button>
+                    }
+                </div>
+
+                <div class="task-list active-tasks">
+                    @foreach (var task in ActiveTasks)
+                    {
+                        <TaskCard @key="task.Id" Task="task"
+                                  OnToggle="() => TaskState.ToggleTask(task.Id)"
+                                  OnUpdate="(newTitle) => TaskState.UpdateTask(task.Id, newTitle)"
+                                  OnRemove="() => TaskState.RemoveTask(task.Id)" />
+                    }
+                    @if (!ActiveTasks.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-check2-all"></i>
+                            <p>All caught up! Your workspace is clear.</p>
+                        </div>
+                    }
+                </div>
+
+                @if (showCompleted && CompletedTasks.Any())
+                {
+                    <div class="divider">
+                        <span>Completed Tasks</span>
+                    </div>
+                    <div class="task-list completed-tasks">
+                        @foreach (var task in CompletedTasks)
+                        {
+                            <TaskCard @key="task.Id" Task="task"
+                                      OnToggle="() => TaskState.ToggleTask(task.Id)"
+                                      OnUpdate="(newTitle) => TaskState.UpdateTask(task.Id, newTitle)"
+                                      OnRemove="() => TaskState.RemoveTask(task.Id)" />
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

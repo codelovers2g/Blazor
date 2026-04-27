@@ -1,0 +1,45 @@
+@inherits LayoutComponentBase
+
+<div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar glass-panel animate-fade-in">
+        <div class="sidebar-header">
+            <h1 class="logo gradient-text">ZenFlow</h1>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <NavLink href="" Match="NavLinkMatch.All" 
+                     class="nav-link"
+                     ActiveClass="active">
+                <i class="bi bi-grid-fill"></i> 
+                <span class="nav-text">Dashboard</span>
+            </NavLink>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-profile glass-panel profile-compact">
+                <div class="user-avatar">
+                    ZU
+                </div>
+                <div class="user-info">
+                    <span class="user-name">Zen User</span>
+                    <span class="user-status">Enterprise Edition</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-container animate-fade-in">
+            @Body
+        </div>
+    </main>
+</div>
+
+<div id="blazor-error-ui" class="error-ui glass-panel">
+    <span class="error-msg">An unhandled error has occurred.</span>
+    <a href="." class="reload-link">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+

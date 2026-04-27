@@ -1,0 +1,54 @@
+<div class="task-card glass-panel @(Task.IsCompleted ? "completed" : "")">
+    <div class="task-checkbox @(Task.IsCompleted ? "checked" : "")" @onclick="Toggle">
+        <i class="bi @(Task.IsCompleted ? "bi-check-circle-fill" : "bi-circle")"></i>
+    </div>
+    
+    <div class="task-content">
+        @if (isEditing)
+        {
+            <input type="text" 
+                   class="task-edit-input glass-input" 
+                   @bind="editTitle" 
+                   @onkeyup="HandleKeyUp" 
+                   @onblur="SaveEdit" 
+                   autofocus />
+        }
+        else
+        {
+            <div class="task-info">
+                <span class="task-title @(Task.IsCompleted ? "line-through" : "")" 
+                      @ondblclick="StartEdit">
+                    @Task.Title
+                </span>
+                <div class="task-meta">
+                    <span class="task-priority @(Task.Priority.ToString().ToLower())">
+                        @Task.Priority
+                    </span>
+                    <span class="task-date">Created @Task.CreatedAt.ToString("MMM dd")</span>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="task-actions">
+        @if (isEditing)
+        {
+            <button class="action-btn success" @onclick="SaveEdit">
+                <i class="bi bi-check-lg"></i>
+            </button>
+            <button class="action-btn danger" @onclick="CancelEdit">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        }
+        else
+        {
+            <button class="action-btn" @onclick="StartEdit">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="action-btn danger" @onclick="Remove">
+                <i class="bi bi-trash"></i>
+            </button>
+        }
+    </div>
+</div>
+
