@@ -1,0 +1,100 @@
+.zen-layout {
+    display: flex;
+    min-height: 100vh;
+    background: radial-gradient(circle at top right, rgba(124, 77, 255, 0.1), transparent),
+                radial-gradient(circle at bottom left, rgba(0, 229, 255, 0.1), transparent);
+}
+
+.zen-sidebar {
+    width: 280px;
+    margin: 1.5rem;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.logo {
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    flex-grow: 1;
+}
+
+.nav-item {
+    padding: 1rem;
+    border-radius: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav-item:hover, .nav-item.active {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.nav-item i {
+    font-size: 1.2rem;
+}
+
+.zen-main {
+    flex-grow: 1;
+    padding: 1.5rem 1.5rem 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+
+
+
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.mood-pill {
+    padding: 0.6rem 1rem;
+    font-size: 1.2rem;
+}
+
+.user-pill {
+    padding: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    background: var(--gradient-main);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#blazor-error-ui {
+    background: #b32121;
+    bottom: 0;
+    color: white;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
